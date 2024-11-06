@@ -1,0 +1,26 @@
+[
+  {
+    "id": "monday",
+    "lessons": ["none", "react", "python", "python", "database", "database", "philosophy"]
+  },
+  {
+    "id": "tuesday",
+    "lessons": ["algorithms lecture", "database lecture", "database lecture"]
+  },
+  {
+    "id": "wednesday",
+    "lessons": ["math lecture", "react lecture", "manasovedenie lecture", "react", "none", "pe", "pe"]
+  },
+  {
+    "id": "thursday",
+    "lessons": ["none", "none", "info", "info lecture", "python", "python"]
+  },
+  {
+    "id": "friday",
+    "lessons": ["none", "math", "russian", "russian", "react lecture", "english", "english"]
+  },
+  {
+    "id": "saturday",
+    "lessons": ["algorithms", "algorithms", "manasovedenie", "python lecture", "pyhton lecture", "python", "python"]
+  }
+]
