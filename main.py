@@ -14,7 +14,7 @@ from requests import get_data, get_coin, get_joke, fetch_ebay_links
 from datetime import datetime
 
 # globals
-load_dotenv()
+load_dotenv("/src")
 BOT_TOKEN = os.getenv('BOT_TOKEN')
 CARD = os.getenv('CARD')
 bot = Bot(token=BOT_TOKEN)
@@ -88,7 +88,7 @@ async def callbacks(call: CallbackQuery):
         if day["id"] == call.data:
             lessons = day["lessons"]
             text = f"{day['id'].capitalize()}:\n" + "\n".join(
-                [f"Урок {i + 1}: {lesson}" for i, lesson in enumerate(lessons)])
+                [f"{i + 1}: {lesson}" for i, lesson in enumerate(lessons)])
             break
     await call.message.reply(text)
 
@@ -165,14 +165,15 @@ async def search_item(message: Message):
         try:
             links = await fetch_ebay_links(query)
             if links:
-                response = "\n".join(links)
+                response = "\n\n".join(links)
                 ebay_state[user_id] = False
                 await message.answer(f"There are they:\n{response}")
             else:
                 ebay_state[user_id] = False
                 await message.answer("Nothing found.")
-        except Exception:
+        except Exception as e:
             ebay_state[user_id] = False
+            print(e)
             await message.answer("Error. Try again later.")
 
 

@@ -1,7 +1,7 @@
 [
   {
     "id": "monday",
-    "lessons": ["none", "react", "python", "python", "database", "database", "philosophy"]
+    "lessons": [" ", "react", "python", "python", "database", "database", "philosophy"]
   },
   {
     "id": "tuesday",
@@ -9,15 +9,15 @@
   },
   {
     "id": "wednesday",
-    "lessons": ["math lecture", "react lecture", "manasovedenie lecture", "react", "none", "pe", "pe"]
+    "lessons": ["math lecture", "react lecture", "manasovedenie lecture", "react", " ", "pe", "pe"]
   },
   {
     "id": "thursday",
-    "lessons": ["none", "none", "info", "info lecture", "python", "python"]
+    "lessons": [" ", " ", "info", "info lecture", "python", "python"]
   },
   {
     "id": "friday",
-    "lessons": ["none", "math", "russian", "russian", "react lecture", "english", "english"]
+    "lessons": [" ", "math", "russian", "russian", "react lecture", "english", "english"]
   },
   {
     "id": "saturday",
