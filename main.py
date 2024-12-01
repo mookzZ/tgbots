@@ -1,5 +1,4 @@
-import os, asyncio, json, re
-from fileinput import close
+import os, asyncio, json, re, time
 
 from dotenv import load_dotenv
 from aiogram import Bot, Dispatcher
@@ -12,6 +11,7 @@ from aiogram.types import (
 )
 from requests import get_data, get_coin, get_joke, fetch_ebay_links
 from datetime import datetime
+from database import functions as db
 
 # globals
 load_dotenv("/src")
@@ -35,8 +35,8 @@ async def start(message: Message):
     with open(f"{logs_path}start.txt", "a", encoding="utf-8") as f:
         f_now = get_current_time()
         f.write(f"{f_now} || ID={message.from_user.id} FULL_NAME={message.from_user.full_name} USERNAME={message.from_user.username} IS_PREMIUM={message.from_user.is_premium} \n")
-
-    markup = InlineKeyboardMarkup(inline_keyboard=[
+    await db.add_user("/start", message.from_user.id, message.from_user.full_name)
+    inline_keyboard = [
         [
             InlineKeyboardButton(text="Crypto-coins", callback_data="crypto"),
             InlineKeyboardButton(text="Schedule", callback_data="schedule"),
@@ -44,12 +44,23 @@ async def start(message: Message):
         [
             InlineKeyboardButton(text="Joke", callback_data="joke"),
             InlineKeyboardButton(text="eBay finder", callback_data="ebay"),
-        ]
-    ])
+        ],
+    ]
+    admin_inline_keyboard = inline_keyboard.copy()
+    admin_inline_keyboard.append([InlineKeyboardButton(text="get_users", callback_data="get_users")])
+    if message.from_user.id == 836196025:
+        markup = InlineKeyboardMarkup(inline_keyboard=admin_inline_keyboard)
+    else:
+        markup = InlineKeyboardMarkup(inline_keyboard=inline_keyboard)
     await message.reply(text, reply_markup=markup)
 
-# Crypto and Schedule HANDLER -> crypto[info, coins], schedule[week days]
-@dp.callback_query(lambda call: call.data in ["crypto", "schedule"])
+@dp.callback_query(lambda call: call.data == "get_users")
+async def get_users(call: CallbackQuery):
+    result = await db.get_user(1)
+    await call.message.answer(result)
+
+# Crypto HANDLER -> crypto[info, coins]
+@dp.callback_query(lambda call: call.data == "crypto")
 async def callbacks(call: CallbackQuery):
     if call.data == "crypto":
         text = "Crypto-bot:"
@@ -60,23 +71,26 @@ async def callbacks(call: CallbackQuery):
             ]
         ])
         await call.message.answer(text, reply_markup=markup)
-    elif call.data == "schedule":
-        text = "Schedule IT-1-23:"
-        markup = InlineKeyboardMarkup(inline_keyboard=[
-            [
-                InlineKeyboardButton(text="ПН", callback_data="monday"),
-                InlineKeyboardButton(text="ВТ", callback_data="tuesday")
-            ],
-            [
-                InlineKeyboardButton(text="СР", callback_data="wednesday"),
-                InlineKeyboardButton(text="ЧТ", callback_data="thursday")
-            ],
-            [
-                InlineKeyboardButton(text="ПТ", callback_data="friday"),
-                InlineKeyboardButton(text="СБ", callback_data="saturday")
-            ]
+
+#schedule > schedule[week days]
+@dp.callback_query(lambda call: call.data == "schedule")
+async def schedule(call: CallbackQuery):
+    text = "Schedule IT-1-23:"
+    markup = InlineKeyboardMarkup(inline_keyboard=[
+        [
+            InlineKeyboardButton(text="ПН", callback_data="monday"),
+            InlineKeyboardButton(text="ВТ", callback_data="tuesday")
+        ],
+        [
+            InlineKeyboardButton(text="СР", callback_data="wednesday"),
+            InlineKeyboardButton(text="ЧТ", callback_data="thursday")
+        ],
+        [
+            InlineKeyboardButton(text="ПТ", callback_data="friday"),
+            InlineKeyboardButton(text="СБ", callback_data="saturday")
+        ]
         ])
-        await call.message.answer(text, reply_markup=markup)
+    await call.message.answer(text, reply_markup=markup)
 
 # week days HANDLER
 @dp.callback_query(lambda call: call.data in ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday"])
@@ -87,8 +101,7 @@ async def callbacks(call: CallbackQuery):
     for day in data:
         if day["id"] == call.data:
             lessons = day["lessons"]
-            text = f"{day['id'].capitalize()}:\n" + "\n".join(
-                [f"{i + 1}: {lesson}" for i, lesson in enumerate(lessons)])
+            text = f"{day['id'].capitalize()}:\n" + "\n".join([f"{i + 1}: {lesson}" for i, lesson in enumerate(lessons)])
             break
     await call.message.reply(text)
 
@@ -147,7 +160,9 @@ async def callback(call: CallbackQuery) -> None:
     if joke["type"] == "single":
         await bot.send_message(call.message.chat.id, text=f"||id: {joke["id"]}|| \n{escape_markdown(joke["joke"])}", parse_mode="MarkdownV2")
     else:
-        await bot.send_message(call.message.chat.id,text=(f"||id: {joke["id"]}|| \n{escape_markdown(joke['setup'])}\n" + f"{escape_markdown(joke["delivery"])}"), parse_mode="MarkdownV2")
+        await bot.send_message(call.message.chat.id,text=f"||id: {joke["id"]}|| \n{escape_markdown(joke['setup'])}\n", parse_mode="MarkdownV2")
+        time.sleep(1.5)
+        await bot.send_message(call.message.chat.id, text=f"{joke["delivery"]}")
 
 # ebay finder
 @dp.callback_query(lambda call: call.data == "ebay")
@@ -165,9 +180,13 @@ async def search_item(message: Message):
         try:
             links = await fetch_ebay_links(query)
             if links:
-                response = "\n\n".join(links)
+                response = ""
+                count = 1
+                for link in links:
+                    response += f"[Link{count}]({link})\n"
+                    count += 1
                 ebay_state[user_id] = False
-                await message.answer(f"There are they:\n{response}")
+                await message.answer(f"There are they:\n{response}", parse_mode="Markdown")
             else:
                 ebay_state[user_id] = False
                 await message.answer("Nothing found.")
@@ -178,6 +197,7 @@ async def search_item(message: Message):
 
 
 async def main():
+    await db.init()
     await dp.start_polling(bot)
 
 if __name__ == '__main__':
